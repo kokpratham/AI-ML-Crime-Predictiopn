@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime Prediction System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: #48bb78;
+        }
+
+        .results-card {
+            grid-column: span 2;
+            min-height: 200px;
+        }
+
+        .prediction-result {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .risk-indicator {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .risk-low {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+
+        .risk-medium {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert.error {
+            background: #fed7d7;
+            color: #822727;
+            border: 1px solid #fc8181;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-card {
+                grid-column: span 1;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Crime Prediction System</h1>
+            <p>Advanced machine learning model for crime risk assessment</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>Model Training</h2>
+                <p style="margin-bottom: 20px; color: #666;">Train the AI model with synthetic crime data</p>
+                <button id="trainBtn" class="btn secondary">Train Model</button>
+                <div id="trainingStatus" style="margin-top: 15px; color: #666;"></div>
+            </div>
+
+            <div class="card">
+                <h2>Crime Risk Prediction</h2>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="hour">Hour of Day (0-23)</label>
+                        <input type="number" id="hour" min="0" max="23" value="14" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="day_of_week">Day of Week</label>
+                        <select id="day_of_week" required>
+                            <option value="0">Monday</option>
+                            <option value="1">Tuesday</option>
+                            <option value="2">Wednesday</option>
+                            <option value="3">Thursday</option>
+                            <option value="4">Friday</option>
+                            <option value="5">Saturday</option>
+                            <option value="6">Sunday</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="month">Month (1-12)</label>
+                        <input type="number" id="month" min="1" max="12" value="6" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="temperature">Temperature (°C)</label>
+                        <input type="number" id="temperature" step="0.1" value="25" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unemployment_rate">Unemployment Rate (%)</label>
+                        <input type="number" id="unemployment_rate" step="0.1" value="5.5" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="population_density">Population Density (per km²)</label>
+                        <input type="number" id="population_density" value="1000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="police_stations_nearby">Police Stations Nearby</label>
+                        <input type="number" id="police_stations_nearby" min="0" value="2" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="previous_crimes_area">Previous Crimes in Area (last month)</label>
+                        <input type="number" id="previous_crimes_area" min="0" value="3" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lighting_quality">Lighting Quality (1-5)</label>
+                        <select id="lighting_quality" required>
+                            <option value="1">Very Poor</option>
+                            <option value="2">Poor</option>
+                            <option value="3" selected>Average</option>
+                            <option value="4">Good</option>
+                            <option value="5">Excellent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="economic_index">Economic Index (0-100)</label>
+                        <input type="number" id="economic_index" min="0" max="100" value="50" required>
+                    </div>
+
+                    <button type="submit" class="btn">Predict Crime Risk</button>
+                </form>
+            </div>
+
+            <div class="card results-card">
+                <h2>Prediction Results</h2>
+                
+                <div id="loadingDiv" class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing crime risk...</p>
+                </div>
+
+                <div id="resultsDiv" class="prediction-result">
+                    <div id="riskIndicator" class="risk-indicator">
+                        <span id="riskText">LOW</span>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="probabilityValue">0%</div>
+                            <div class="stat-label">Crime Probability</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="confidenceValue">0%</div>
+                            <div class="stat-label">Confidence</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="riskLevelValue">Low</div>
+                            <div class="stat-label">Risk Level</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; display: none;" id="initialMessage">
+                    <p style="color: #666; text-align: center;">Train the model and make a prediction to see results here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let modelTrained = false;
+
+        // Check model status on page load
+        fetch('/model_status')
+            .then(response => response.json())
+            .then(data => {
+                modelTrained = data.is_trained;
+                updateTrainingStatus();
+            });
+
+        function updateTrainingStatus() {
+            const statusDiv = document.getElementById('trainingStatus');
+            const initialMessage = document.getElementById('initialMessage');
+            
+            if (modelTrained) {
+                statusDiv.innerHTML = '<span style="color: #48bb78;">✓ Model is trained and ready</span>';
+                initialMessage.style.display = 'none';
+            } else {
+                statusDiv.innerHTML = '<span style="color: #ed8936;">⚠ Model needs training</span>';
+                initialMessage.style.display = 'block';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type}`;
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Train model
+        document.getElementById('trainBtn').addEventListener('click', function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Training...';
+            
+            fetch('/train', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Model trained successfully! Accuracy: ${(data.accuracy * 100).toFixed(2)}%`, 'success');
+                    modelTrained = true;
+                    updateTrainingStatus();
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Training failed: ' + error.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Train Model';
+            });
+        });
+
+        // Handle prediction form
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!modelTrained) {
+                showAlert('Please train the model first before making predictions', 'error');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {};
+            
+            // Convert form data to appropriate types
+            data.hour = parseInt(document.getElementById('hour').value);
+            data.day_of_week = parseInt(document.getElementById('day_of_week').value);
+            data.month = parseInt(document.getElementById('month').value);
+            data.temperature = parseFloat(document.getElementById('temperature').value);
+            data.unemployment_rate = parseFloat(document.getElementById('unemployment_rate').value);
+            data.population_density = parseInt(document.getElementById('population_density').value);
+            data.police_stations_nearby = parseInt(document.getElementById('police_stations_nearby').value);
+            data.previous_crimes_area = parseInt(document.getElementById('previous_crimes_area').value);
+            data.lighting_quality = parseInt(document.getElementById('lighting_quality').value);
+            data.economic_index = parseFloat(document.getElementById('economic_index').value);
+
+            // Show loading
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('resultsDiv').style.display = 'none';
+            document.getElementById('initialMessage').style.display = 'none';
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                document.getElementById('loadingDiv').style.display = 'none';
+                
+                if (result.success) {
+                    const prediction = result.prediction;
+                    
+                    // Update risk indicator
+                    const riskIndicator = document.getElementById('riskIndicator');
+                    const riskText = document.getElementById('riskText');
+                    
+                    riskText.textContent = prediction.risk_level.toUpperCase();
+                    riskIndicator.className = `risk-indicator risk-${prediction.risk_level.toLowerCase()}`;
+                    
+                    // Update stats
+                    document.getElementById('probabilityValue').textContent = 
+                        (prediction.crime_probability * 100).toFixed(1) + '%';
+                    document.getElementById('confidenceValue').textContent = 
+                        (prediction.confidence * 100).toFixed(1) + '%';
+                    document.getElementById('riskLevelValue').textContent = prediction.risk_level;
+                    
+                    document.getElementById('resultsDiv').style.display = 'block';
+                } else {
+                    showAlert(result.message, 'error');
+                    document.getElementById('initialMessage').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingDiv').style.display = 'none';
+                showAlert('Prediction failed: ' + error.message, 'error');
+                document.getElementById('initialMessage').style.display = 'block';
+            });
+        });
+
+        // Initialize
+        updateTrainingStatus();
+    </script>
+</body>
+</html>
